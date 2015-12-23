@@ -11,6 +11,11 @@ static int manchester_setup( lua_State *L )
   int total = lua_gettop( L );
 }
 
+static int manchester_read( lua_State *L )
+{
+  
+}
+
 static int manchester_write( lua_State *L )
 {
   uint16_t c;
@@ -19,7 +24,7 @@ static int manchester_write( lua_State *L )
   if(total != 1)
     return 0;
 
-  manchester_putc(c);
+  manchester_putc_timer(c);
 
   return 1;
 }
@@ -30,6 +35,7 @@ static int manchester_write( lua_State *L )
 const LUA_REG_TYPE manchester_map[] =
 {
   { LSTRKEY( "write" ),  LFUNCVAL( manchester_write ) },
+  { LSTRKEY( "read" ),  LFUNCVAL( manchester_read ) },
   { LSTRKEY( "setup" ),  LFUNCVAL( manchester_setup ) },
 #if LUA_OPTIMIZE_MEMORY > 0
 

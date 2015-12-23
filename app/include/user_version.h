@@ -8,7 +8,7 @@
 
 #define NODE_VERSION	"NodeMCU 1.4.0"
 #ifndef BUILD_DATE
-#define BUILD_DATE	  "20151006"
+#define BUILD_DATE	  "20151216"
 #endif
 
 extern char SDK_VERSION[];
