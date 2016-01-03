@@ -253,7 +253,7 @@
 #define ROM_MODULES_HX711
 #endif
 
-#if defined(LUA_USE_MODULES_HX711)
+#if defined(LUA_USE_MODULES_MANCHESTER)
 #define MODULES_MANCHESTER      "manchester"
 #define ROM_MODULES_MANCHESTER  \
     _ROM(MODULES_MANCHESTER, luaopen_manchester, manchester_map)

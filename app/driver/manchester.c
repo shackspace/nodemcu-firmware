@@ -1,11 +1,20 @@
 #include "driver/manchester.h"
 #include "platform.h"
+#include "osapi.h"
+#define sprintf(...) os_sprintf( __VA_ARGS__ )
 
 static ManchesterDevice ManchesterDev;
 
-#define DIRECT_READ(pin) GPIO_INPUT_GET(GPIO_ID_PIN(pin_num[pin]))
+#define DIRECT_READ(pin)         (0x1 & GPIO_INPUT_GET(GPIO_ID_PIN(pin_num[pin])))
+#define DIRECT_MODE_INPUT(pin)   GPIO_DIS_OUTPUT(pin_num[pin])
+#define DIRECT_MODE_OUTPUT(pin)
+#define DIRECT_WRITE_LOW(pin)    (GPIO_OUTPUT_SET(GPIO_ID_PIN(pin_num[pin]), 0))
+#define DIRECT_WRITE_HIGH(pin)   (GPIO_OUTPUT_SET(GPIO_ID_PIN(pin_num[pin]), 1))
+#define delayMicroseconds os_delay_us
+#define noInterrupts ets_intr_lock
+#define interrupts ets_intr_unlock
 
-void ICACHE_FLASH_ATTR manchester_init(ManchesterBautRate baut, ManchesterBitsNum4Char data_bits_tx, ManchesterBitsNum4Char data_bits_rx, ManchesterStopBitsNum stop_bits, uint8_t tx_pin, uint8_t rx_pin, uint8_t task_prio, os_signal_t sig_input)
+void ICACHE_FLASH_ATTR manchester_init(ManchesterBautRate baut, ManchesterBitsNum4Char data_bits_tx, ManchesterBitsNum4Char data_bits_rx, ManchesterStopBitsNum stop_bits, uint8_t tx_pin, uint8_t rx_pin)
 {
 	platform_gpio_mode(rx_pin, PLATFORM_GPIO_INPUT, PLATFORM_GPIO_PULLUP);
 	platform_gpio_mode(tx_pin, PLATFORM_GPIO_OUTPUT, PLATFORM_GPIO_PULLUP);
@@ -20,35 +29,47 @@ void ICACHE_FLASH_ATTR manchester_init(ManchesterBautRate baut, ManchesterBitsNu
 	DIRECT_WRITE_HIGH(tx_pin);
 }
 
-inline bool wait_for(unsigned start_time, unsigned end_time)
+inline bool wait_for(uint32_t start_time, uint32_t end_time)
 {
 	while ((0x7FFFFFFF & system_get_time()) < end_time)
 	{
 		//If system timer overflow, escape from while loop
-		if ((0x7FFFFFFF & system_get_time()) < start_time){return false;}
-		else {return true;}
+		if ((0x7FFFFFFF & system_get_time()) < start_time) {return false;}
 	}
-
+	return true;
 }
 
 void ICACHE_FLASH_ATTR manchester_putc_timer(const uint16_t c)
 {
+	//uint8_t sbuffer[64];
 	uint32_t buffer = 0;
 	uint32_t start_time = 0;
 	uint8_t length = (uint8_t)ManchesterDev.data_bits_tx;
-	uint16_t half_bit_time = 500000 / ((uint16_t)ManchesterDev.baut_rate);
+	uint32_t half_bit_time = 500000 / ((uint16_t)ManchesterDev.baut_rate);
+	uint16_t _c = c;
+
+	//sprintf((char*)sbuffer,"half_bit_time: %d \n", half_bit_time);
+	//uart0_sendStr(sbuffer);
 
 START:
+  //uart0_sendStr("START\n");
 
 	for(; 0 < length; length--)
 	{
 		buffer <<= 2;
-		buffer = (c & 0x01) ? 0x02 : 0x01;
+		buffer |= (_c & 0x01) ? 0x02 : 0x01;
+		_c >>= 1;
 	}
+
+	//uart0_sendStr("BUFFER created\n");
 
 	length = 2 * ((uint16_t)ManchesterDev.data_bits_tx);
 
 	start_time = 0x7FFFFFFF & system_get_time();
+	//sprintf((char*)sbuffer,"start_time: %d \n", start_time);
+	//uart0_sendStr(sbuffer);
+	//sprintf((char*)sbuffer,"end_time: %d \n", start_time + half_bit_time);
+	//uart0_sendStr(sbuffer);
 	//write start bit
 	DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
 	if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
@@ -73,7 +94,7 @@ START:
 	if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
 	start_time = start_time + half_bit_time;
 
-	if(ManchesterDev.stop_bits == BIT2)
+	if(ManchesterDev.stop_bits == TWO_STOP_BIT)
 	{
 		DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
 		if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
@@ -99,11 +120,10 @@ void ICACHE_FLASH_ATTR manchester_putc(const uint16_t c)
 
 	uint16_t half_bit_time = 500000 / ((uint16_t)ManchesterDev.baut_rate);
 
-
 	for(; 0 < length; length--)
 	{
 		buffer <<= 2;
-		buffer = (c & 0x01) ? 0x02 : 0x01;
+		buffer |= (c & 0x01) ? 0x02 : 0x01;
 	}
 
 	length = 2 * ((uint16_t)ManchesterDev.data_bits_tx);
@@ -129,7 +149,7 @@ void ICACHE_FLASH_ATTR manchester_putc(const uint16_t c)
   DIRECT_WRITE_HIGH(ManchesterDev.tx_pin);
 	delayMicroseconds(half_bit_time);
 
-	if(ManchesterDev.stop_bits == BIT2)
+	if(ManchesterDev.stop_bits == TWO_STOP_BIT)
 	{
 		DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
 		delayMicroseconds(half_bit_time);
@@ -147,6 +167,9 @@ void ICACHE_FLASH_ATTR manchester_recive(uint16_t* c, uint32_t timeout_us)
 	uint32_t start_time = 0x7FFFFFFF & system_get_time();
 	uint32_t end_time = 0;
   uint32_t buffer = 0;
+	uint8_t length = 2 * ((uint16_t)ManchesterDev.data_bits_rx);
+
+	*c = 0xFFFF;
 
 	timeout_us = 0x7FFFFFFF & timeout_us;
 
@@ -167,9 +190,48 @@ void ICACHE_FLASH_ATTR manchester_recive(uint16_t* c, uint32_t timeout_us)
 		start_time = (system_get_time() & 0x7FFFFFFF);
 		end_time = start_time + half_bit_time/2;
 	  wait_for(start_time, end_time);
-		if(!READ_DIRECT(ManchesterDev.rx_pin)) //detecting glitch --> rx_pin still low, so valid
+		if(!DIRECT_READ(ManchesterDev.rx_pin)) //detecting glitch --> rx_pin still low, so valid
 		{
 			start_time = end_time;
+			end_time = start_time + half_bit_time;
+			wait_for(start_time, end_time);
+			if(!DIRECT_READ(ManchesterDev.rx_pin)) continue; //signal is not high again
+
+			//reading bits to buffer...
+			for(;length > 0; length--)
+			{
+				start_time = end_time;
+				end_time = start_time + half_bit_time;
+
+				wait_for(start_time, end_time);
+
+				buffer <<= 1;
+				buffer = buffer | DIRECT_READ(ManchesterDev.rx_pin) ? 0x01 : 0x00;
+			}
+
+			start_time = end_time;
+			end_time = start_time + half_bit_time;
+			wait_for(start_time, end_time);
+			if(DIRECT_READ(ManchesterDev.rx_pin)) continue; //signal is not high again
+
+			start_time = end_time;
+			end_time = start_time + half_bit_time;
+			wait_for(start_time, end_time);
+			if(!DIRECT_READ(ManchesterDev.rx_pin)) continue; //signal is not high again
+
+			if(ManchesterDev.stop_bits == TWO_STOP_BIT)
+			{
+      	start_time = end_time;
+				end_time = start_time + half_bit_time;
+				wait_for(start_time, end_time);
+				if(DIRECT_READ(ManchesterDev.rx_pin)) continue; //signal is not high again
+
+				start_time = end_time;
+				end_time = start_time + half_bit_time;
+				wait_for(start_time, end_time);
+				if(!DIRECT_READ(ManchesterDev.rx_pin)) continue; //signal is not high again
+			}
+
 		}
 		else
 		{
