@@ -41,7 +41,8 @@ SUBDIRS= 					\
 	cjson 					\
 	crypto 					\
 	dhtlib					\
-	tsl2561
+	tsl2561					\
+	dali
 
 endif # } PDIR
 
@@ -86,7 +87,8 @@ COMPONENTS_eagle.app.v6 = 			\
 	crypto/libcrypto.a 			\
 	dhtlib/libdhtlib.a 			\
 	tsl2561/tsl2561lib.a			\
-	modules/libmodules.a		
+	modules/libmodules.a			\
+	dali/dali.a
 
 
 LINKFLAGS_eagle.app.v6 = 			\

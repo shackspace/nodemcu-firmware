@@ -46,11 +46,13 @@ static int manchester_setup( lua_State *L )
   MOD_CHECK_ID( gpio, rx_pin );
 
   manchester_init(baut, data_bits_tx, data_bits_rx, stop_bits, tx_pin, rx_pin);
+
+  return 0;
 }
 
 static int manchester_read( lua_State *L )
 {
-
+ //TODO
 }
 
 static int manchester_write( lua_State *L )
@@ -63,7 +65,7 @@ static int manchester_write( lua_State *L )
 
   c = luaL_checkinteger( L, 1 );
 
-  manchester_putc_timer(c);
+  manchester_putc(c);
 
   return 0;
 }

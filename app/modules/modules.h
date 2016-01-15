@@ -261,6 +261,14 @@
 #define ROM_MODULES_MANCHESTER
 #endif
 
+#if defined(LUA_USE_MODULES_DALI)
+#define MODULES_DALI      "dali"
+#define ROM_MODULES_DALI  \
+    _ROM(MODULES_DALI, luaopen_dali, dali_map)
+#else
+#define ROM_MODULES_DALI
+#endif
+
 #define LUA_MODULES_ROM     \
         ROM_MODULES_GPIO    \
         ROM_MODULES_PWM		\
@@ -293,6 +301,7 @@
         ROM_MODULES_BMP085  \
         ROM_MODULES_TSL2561 \
         ROM_MODULES_HX711   \
-        ROM_MODULES_MANCHESTER
+        ROM_MODULES_MANCHESTER \
+        ROM_MODULES_DALI
 
 #endif

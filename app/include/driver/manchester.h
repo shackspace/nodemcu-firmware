@@ -39,7 +39,6 @@ typedef struct {
 
 void manchester_init(ManchesterBautRate baut, ManchesterBitsNum4Char data_bits_tx, ManchesterBitsNum4Char data_bits_rx, ManchesterStopBitsNum stop_bits, uint8_t tx_pin, uint8_t rx_pin);
 void manchester_putc(const uint16_t c);
-void manchester_putc_timer(const uint16_t c);
 void manchester_recive(uint16_t* c, uint32_t timeout_us);
 
 

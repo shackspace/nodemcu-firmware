@@ -39,7 +39,7 @@ inline bool wait_for(uint32_t start_time, uint32_t end_time)
 	return true;
 }
 
-void ICACHE_FLASH_ATTR manchester_putc_timer(const uint16_t c)
+void ICACHE_FLASH_ATTR manchester_putc(const uint16_t c)
 {
 	//uint8_t sbuffer[64];
 	uint32_t buffer = 0;
@@ -87,24 +87,15 @@ START:
 	}
 
 	//send stopbits
-	DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
-	if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
-	start_time = start_time + half_bit_time;
 	DIRECT_WRITE_HIGH(ManchesterDev.tx_pin);
-	if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
-	start_time = start_time + half_bit_time;
+	if(!wait_for(start_time, start_time + 2*half_bit_time)) os_delay_us(half_bit_time*6);
+	start_time = start_time + 2*half_bit_time;
 
 	if(ManchesterDev.stop_bits == TWO_STOP_BIT)
 	{
-		DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
-		if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
-		start_time = start_time + half_bit_time;
 		DIRECT_WRITE_HIGH(ManchesterDev.tx_pin);
-		if(!wait_for(start_time, start_time + half_bit_time)) goto RETRY;
-		start_time = start_time + half_bit_time;
+		wait_for(start_time, start_time + 2*half_bit_time);
 	}
-
-	os_delay_us(half_bit_time*6);
 
 	return;
 
@@ -113,55 +104,7 @@ RETRY:
 	goto START;
 }
 
-void ICACHE_FLASH_ATTR manchester_putc(const uint16_t c)
-{
-	uint32_t buffer = 0;
-	uint8_t length = (uint8_t)ManchesterDev.data_bits_tx;
-
-	uint16_t half_bit_time = 500000 / ((uint16_t)ManchesterDev.baut_rate);
-
-	for(; 0 < length; length--)
-	{
-		buffer <<= 2;
-		buffer |= (c & 0x01) ? 0x02 : 0x01;
-	}
-
-	length = 2 * ((uint16_t)ManchesterDev.data_bits_tx);
-
-	//send start bit
-	noInterrupts();
-	DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
-	delayMicroseconds(half_bit_time);
-  DIRECT_WRITE_HIGH(ManchesterDev.tx_pin);
-	delayMicroseconds(half_bit_time);
-
-  //send data
-  for(;0 < length; length--)
-	{
-		buffer & 0x01 ? DIRECT_WRITE_HIGH(ManchesterDev.tx_pin) : DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
-		buffer = buffer >> 1;
-		delayMicroseconds(half_bit_time);
-	}
-
-  //send stopbits
-	DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
-	delayMicroseconds(half_bit_time);
-  DIRECT_WRITE_HIGH(ManchesterDev.tx_pin);
-	delayMicroseconds(half_bit_time);
-
-	if(ManchesterDev.stop_bits == TWO_STOP_BIT)
-	{
-		DIRECT_WRITE_LOW(ManchesterDev.tx_pin);
-		delayMicroseconds(half_bit_time);
-		DIRECT_WRITE_HIGH(ManchesterDev.tx_pin);
-		delayMicroseconds(half_bit_time);
-	}
-	interrupts();
-
-}
-
-
-void ICACHE_FLASH_ATTR manchester_recive(uint16_t* c, uint32_t timeout_us)
+void ICACHE_FLASH_ATTR manchester_recieve(uint16_t* c, uint32_t timeout_us)
 {
 	uint16_t half_bit_time = 500000 / ((uint16_t)ManchesterDev.baut_rate);
 	uint32_t start_time = 0x7FFFFFFF & system_get_time();
