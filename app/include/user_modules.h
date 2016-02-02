@@ -15,12 +15,12 @@
 #define LUA_USE_MODULES
 
 #ifdef LUA_USE_MODULES
-//#define LUA_USE_MODULES_ADC
+#define LUA_USE_MODULES_ADC
 //#define LUA_USE_MODULES_BIT
 //#define LUA_USE_MODULES_BMP085
 //#define LUA_USE_MODULES_CJSON
 //#define LUA_USE_MODULES_COAP
-//#define LUA_USE_MODULES_CRYPTO
+#define LUA_USE_MODULES_CRYPTO
 //#define LUA_USE_MODULES_DHT
 //#define LUA_USE_MODULES_ENDUSER_SETUP // USE_DNS in dhcpserver.h needs to be enabled for this module to work.
 #define LUA_USE_MODULES_FILE
@@ -48,6 +48,7 @@
 //#define LUA_USE_MODULES_WS2812
 //#define LUA_USE_MODULES_MANCHESTER
 #define LUA_USE_MODULES_DALI
+#define LUA_USE_MODULES_BONJOUR
 
 #endif /* LUA_USE_MODULES */
 #endif
