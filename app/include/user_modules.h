@@ -12,9 +12,7 @@
 #define LUA_USE_BUILTIN_DEBUG_MINIMAL // for debug.getregistry() and debug.traceback()
 
 #ifndef LUA_CROSS_COMPILER
-#define LUA_USE_MODULES
 
-#ifdef LUA_USE_MODULES
 #define LUA_USE_MODULES_ADC
 //#define LUA_USE_MODULES_BIT
 //#define LUA_USE_MODULES_BMP085
@@ -50,7 +48,6 @@
 #define LUA_USE_MODULES_DALI
 #define LUA_USE_MODULES_BONJOUR
 
-#endif /* LUA_USE_MODULES */
-#endif
 
+#endif  /* LUA_CROSS_COMPILER */
 #endif	/* __USER_MODULES_H__ */
