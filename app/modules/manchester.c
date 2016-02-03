@@ -1,8 +1,8 @@
 //#include "lua.h"
-#include "lualib.h"
+#include "module.h"
 #include "lauxlib.h"
-#include "auxmods.h"
-#include "lrotable.h"
+#include "platform.h"
+
 #include "driver/manchester.h"
 
 
@@ -70,16 +70,13 @@ static int manchester_write( lua_State *L )
   return 0;
 }
 
-// Module function map
-#define MIN_OPT_LEVEL   2
-#include "lrodefs.h"
-const LUA_REG_TYPE manchester_map[] =
+
+static const LUA_REG_TYPE manchester_map[] =
 {
   { LSTRKEY( "write" ),  LFUNCVAL( manchester_write ) },
   { LSTRKEY( "read" ),  LFUNCVAL( manchester_read ) },
   { LSTRKEY( "setup" ),  LFUNCVAL( manchester_setup ) },
 
-#if LUA_OPTIMIZE_MEMORY > 0
   { LSTRKEY( "BAUT300" ), LNUMVAL( BIT_RATE_300 ) },
   { LSTRKEY( "BAUT600" ), LNUMVAL( BIT_RATE_600 ) },
   { LSTRKEY( "BAUT1200" ), LNUMVAL( BIT_RATE_1200 ) },
@@ -97,35 +94,7 @@ const LUA_REG_TYPE manchester_map[] =
   { LSTRKEY( "SEVEN_BITS" ), LNUMVAL( SEVEN_BITS ) },
   { LSTRKEY( "EIGHT_BITS" ), LNUMVAL( EIGHT_BITS ) },
   { LSTRKEY( "SIXTEEN_BITS" ), LNUMVAL( SIXTEEN_BITS ) },
-#endif
   { LNILKEY, LNILVAL }
 };
 
-LUALIB_API int luaopen_manchester( lua_State *L )
-{
-#if LUA_OPTIMIZE_MEMORY > 0
-  return 0;
-#else // #if LUA_OPTIMIZE_MEMORY > 0
-  luaL_register( L, AUXLIB_MANCHESTER, manchester_map );
-
-  // Add the constants
-  MOD_REG_NUMBER( L, "BAUT300", BIT_RATE_300 );
-  MOD_REG_NUMBER( L, "BAUT600", BIT_RATE_600 );
-  MOD_REG_NUMBER( L, "BAUT1200", BIT_RATE_1200 );
-  MOD_REG_NUMBER( L, "BAUT2400", BIT_RATE_2400 );
-  MOD_REG_NUMBER( L, "BAUT4800", BIT_RATE_4800 );
-  MOD_REG_NUMBER( L, "BAUT9600", BIT_RATE_9600 );
-  MOD_REG_NUMBER( L, "BAUT19200", BIT_RATE_19200 );
-  MOD_REG_NUMBER( L, "BAUT38400", BIT_RATE_38400 );
-
-  MOD_REG_NUMBER( L, "ONE_STOP_BIT", ONE_STOP_BIT );
-  MOD_REG_NUMBER( L, "TWO_STOP_BIT", TWO_STOP_BIT );
-
-  MOD_REG_NUMBER( L, "FIVE_BITS", FIVE_BITS );
-  MOD_REG_NUMBER( L, "SIX_BITS", SIX_BITS );
-  MOD_REG_NUMBER( L, "SEVEN_BITS", SEVEN_BITS );
-  MOD_REG_NUMBER( L, "EIGHT_BITS", EIGHT_BITS );
-  MOD_REG_NUMBER( L, "SIXTEEN_BITS", SIXTEEN_BITS );
-  return 1;
-#endif // #if LUA_OPTIMIZE_MEMORY > 0
-}
+NODEMCU_MODULE(MANCHESTER, "manchester", manchester_map, NULL);
