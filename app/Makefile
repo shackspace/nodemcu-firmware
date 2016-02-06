@@ -42,7 +42,8 @@ SUBDIRS= 					\
 	crypto 					\
 	dhtlib					\
 	tsl2561					\
-	dali
+	dali						\
+	http
 
 endif # } PDIR
 
@@ -87,6 +88,7 @@ COMPONENTS_eagle.app.v6 = 			\
 	crypto/libcrypto.a 			\
 	dhtlib/libdhtlib.a 			\
 	tsl2561/tsl2561lib.a			\
+	http/libhttp.a				\
 	modules/libmodules.a			\
 	dali/dali.a
 
@@ -114,10 +116,12 @@ LINKFLAGS_eagle.app.v6 = 			\
 	-lpp 					\
 	-lnet80211 				\
 	-lwpa 					\
+	-lwpa2					\
 	-lmain 					\
 	-ljson 					\
 	-lsmartconfig 				\
 	-lssl 					\
+	-lcrypto				\
 	$(DEP_LIBS_eagle.app.v6) 		\
 	-Wl,--end-group 			\
 	-lm

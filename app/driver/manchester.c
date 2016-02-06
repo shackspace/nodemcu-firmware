@@ -3,6 +3,8 @@
 #include "osapi.h"
 #define sprintf(...) os_sprintf( __VA_ARGS__ )
 
+extern uint32_t system_get_time();
+
 static ManchesterDevice ManchesterDev;
 
 #define DIRECT_READ(pin)         (0x1 & GPIO_INPUT_GET(GPIO_ID_PIN(pin_num[pin])))

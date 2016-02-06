@@ -1,322 +1,104 @@
-<<<<<<< HEAD
-# **NodeMCU 1.4.0** #
+# **NodeMCU 1.5.1** #
 
-[![Join the chat at https://gitter.im/nodemcu/nodemcu-firmware](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nodemcu/nodemcu-firmware?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/nodemcu/nodemcu-firmware](https://img.shields.io/gitter/room/badges/shields.svg)](https://gitter.im/nodemcu/nodemcu-firmware?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/nodemcu/nodemcu-firmware.svg)](https://travis-ci.org/nodemcu/nodemcu-firmware)
+[![Documentation Status](https://readthedocs.org/projects/nodemcu/badge/?version=dev)](http://nodemcu.readthedocs.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/nodemcu/nodemcu-firmware/blob/master/LICENSE)
 
-###A lua based firmware for wifi-soc esp8266
-  - Build on [ESP8266 NONOS SDK 1.4.0](http://bbs.espressif.com/viewtopic.php?f=46&t=1124)
-  - Lua core based on [eLua project](http://www.eluaproject.net/)
-  - cjson based on [lua-cjson](https://github.com/mpx/lua-cjson)
-  - File system based on [spiffs](https://github.com/pellepl/spiffs)
-  - Open source development kit for NodeMCU [nodemcu-devkit-v0.9](https://github.com/nodemcu/nodemcu-devkit) [nodemcu-devkit-v1.0](https://github.com/nodemcu/nodemcu-devkit-v1.0)
+### A Lua based firmware for ESP8266 WiFi SOC
+
+NodeMCU is an [eLua](http://www.eluaproject.net/) based firmware for the [ESP8266 WiFi SOC from Espressif](http://espressif.com/en/products/esp8266/). The firmware is based on the [Espressif NON-OS SDK 1.5.1](http://bbs.espressif.com/viewtopic.php?f=46&p=5315) and uses a file system based on [spiffs](https://github.com/pellepl/spiffs). The code repository consists of 98.1% C-code that glues the thin Lua veneer to the SDK.
+
+The NodeMCU *firmware* is a companion project to the popular [NodeMCU dev kits](https://github.com/nodemcu/nodemcu-devkit-v1.0), ready-made open source development boards with ESP8266-12E chips.
 
 # Summary
 
-- Easy to program wireless node and/or Access Point
-- Based on Lua 5.1.4 (without *debug, os* module.)
-- Event-driven programming model preferred
-- Built-in modules: node, json, file, timer, pwm, i2c, spi, onewire, net, mqtt, coap, gpio, wifi, adc, uart, bit, u8g, ucg, ws2801, ws2812, crypto, dht, rtc, sntp, bmp085, tls2561, hx711 and system api.
-- Both Integer (less memory usage) and Float version firmware provided.
+- Easy to program wireless node and/or access point
+- Based on Lua 5.1.4 (without *debug, os* modules)
+- Asynchronous event-driven programming model
+- 35+ [built-in modules](https://github.com/nodemcu/nodemcu-firmware/wiki/Module-list)
+- Firmware available with or without floating point support (integer-only uses less memory)
+- Up-to-date documentation at [https://nodemcu.readthedocs.org](https://nodemcu.readthedocs.org)
 
-## Useful links
+# Programming Model
 
-| Resource | Location |
-| -------------- | -------------- |
-| Developer Wiki       | https://github.com/nodemcu/nodemcu-firmware/wiki |
-| API docs             | [NodeMCU api](https://github.com/nodemcu/nodemcu-firmware/wiki/nodemcu_api_en) |
-| Home                 | [nodemcu.com](http://www.nodemcu.com) |
-| BBS                  | [Chinese BBS](http://bbs.nodemcu.com) |
-| Docs                 | [NodeMCU docs](http://www.nodemcu.com/docs/) |
-| Tencent QQ group     | 309957875 |
-| Windows flash tool   | [nodemcu-flasher](https://github.com/nodemcu/nodemcu-flasher) |
-| Linux flash tool     | [Esptool](https://github.com/themadinventor/esptool) |
-| ESPlorer GUI         | https://github.com/4refr0nt/ESPlorer |
-| NodeMCU Studio GUI   | https://github.com/nodemcu/nodemcu-studio-csharp |
-
-# Programming Examples
-
-Because Lua is a high level language and several modules are built into the firmware, you can very easily program your ESP8266. Here are some examples!
-
-## Connect to your AP
+The NodeMCU programming model is similar to that of [Node.js](https://en.wikipedia.org/wiki/Node.js), only in Lua. It is asynchronous and event-driven. Many functions, therefore, have parameters for callback functions. To give you an idea what a NodeMCU program looks like study the short snippets below. For more extensive examples have a look at the [`/lua_examples`](lua_examples) folder in the repository on GitHub.
 
 ```lua
-    ip = wifi.sta.getip()
-    print(ip)
-    --nil
-    wifi.setmode(wifi.STATION)
-    wifi.sta.config("SSID", "password")
-    ip = wifi.sta.getip()
-    print(ip)
-    --192.168.18.110
-```
-
-## Manipulate hardware like an Arduino
-
-```lua
-    pin = 1
-    gpio.mode(pin, gpio.OUTPUT)
-    gpio.write(pin, gpio.HIGH)
-    print(gpio.read(pin))
-```
-
-## Write a network application in Node.js style
-
-```lua
-    -- A simple http client
-    conn=net.createConnection(net.TCP, 0)
-    conn:on("receive", function(conn, payload) print(payload) end)
-    conn:connect(80, "115.239.210.27")
-    conn:send("GET / HTTP/1.1\r\nHost: www.baidu.com\r\n"
-        .. "Connection: keep-alive\r\nAccept: */*\r\n\r\n")
-```
-
-## Or a simple HTTP server
-
-```lua
-    -- A simple http server
-    srv=net.createServer(net.TCP)
-    srv:listen(80, function(conn)
-      conn:on("receive", function(conn,payload)
-        print(payload)
-        conn:send("<h1> Hello, NodeMCU.</h1>")
-      end)
-      conn:on("sent", function(conn) conn:close() end)
-    end)
-```
-
-## Connect to MQTT broker
-
-```lua
--- init mqtt client with keepalive timer 120sec
-m = mqtt.Client("clientid", 120, "user", "password")
-
--- setup Last Will and Testament (optional)
--- Broker will publish a message with qos = 0, retain = 0, data = "offline"
--- to topic "/lwt" if client doesn't send keepalive packet
-m:lwt("/lwt", "offline", 0, 0)
-
-m:on("connect", function(con) print("connected") end)
-m:on("offline", function(con) print("offline") end)
-
--- on publish message receive event
-m:on("message", function(conn, topic, data)
-  print(topic .. ":")
-  if data ~= nil then
-    print(data)
-  end
+-- a simple HTTP server
+srv = net.createServer(net.TCP)
+srv:listen(80, function(conn)
+	conn:on("receive", function(conn, payload)
+		print(payload)
+		conn:send("<h1> Hello, NodeMCU.</h1>")
+	end)
+	conn:on("sent", function(conn) conn:close() end)
 end)
-
--- m:connect(host, port, secure, auto_reconnect, function(client) end)
--- for secure: m:connect("192.168.11.118", 1880, 1, 0)
--- for auto-reconnect: m:connect("192.168.11.118", 1880, 0, 1)
-m:connect("192.168.11.118", 1880, 0, 0, function(conn) print("connected") end)
-
--- subscribe to topic with qos = 0
-m:subscribe("/topic", 0, function(conn) print("subscribe success") end)
--- or subscribe multiple topics (topic/0, qos = 0; topic/1, qos = 1; topic2, qos = 2)
--- m:subscribe({["topic/0"]=0,["topic/1"]=1,topic2=2}, function(conn) print("subscribe success") end)
--- publish a message with data = hello, QoS = 0, retain = 0
-m:publish("/topic", "hello", 0, 0, function(conn) print("sent") end)
-
-m:close();  -- if auto-reconnect == 1, it will disable auto-reconnect and then disconnect from host.
--- you can call m:connect again
-
 ```
-
-## UDP client and server
-
 ```lua
--- a udp server
-s=net.createServer(net.UDP)
-s:on("receive", function(s, c) print(c) end)
-s:listen(5683)
-
--- a udp client
-cu=net.createConnection(net.UDP)
-cu:on("receive", function(cu, c) print(c) end)
-cu:connect(5683, "192.168.18.101")
-cu:send("hello")
+-- connect to WiFi access point
+wifi.setmode(wifi.STATION)
+wifi.sta.config("SSID", "password")
 ```
 
-## Do something shiny with an RGB LED
+# Documentation
 
-```lua
-  function led(r, g, b)
-    pwm.setduty(1, r)
-    pwm.setduty(2, g)
-    pwm.setduty(3, b)
-  end
-  pwm.setup(1, 500, 512)
-  pwm.setup(2, 500, 512)
-  pwm.setup(3, 500, 512)
-  pwm.start(1)
-  pwm.start(2)
-  pwm.start(3)
-  led(512, 0, 0) -- red
-  led(0, 0, 512) -- blue
-```
+The entire [NodeMCU documentation](https://nodemcu.readthedocs.org) is maintained right in this repository at [/docs](docs). The fact that the API documentation is mainted in the same repository as the code that *provides* the API ensures consistency between the two. With every commit the documentation is rebuilt by Read the Docs and thus transformed from terse Markdown into a nicely browsable HTML site at [https://nodemcu.readthedocs.org](https://nodemcu.readthedocs.org).
 
-## And blink it
+- How to [build the firmware](https://nodemcu.readthedocs.org/en/dev/en/build/)
+- How to [flash the firmware](https://nodemcu.readthedocs.org/en/dev/en/flash/)
+- How to [upload code and NodeMCU IDEs](https://nodemcu.readthedocs.org/en/dev/en/upload/)
+- API documentation for every module
 
-```lua
-  lighton=0
-  tmr.alarm(1, 1000, 1, function()
-    if lighton==0 then
-      lighton=1
-      led(512, 512, 512)
-    else
-      lighton=0
-      led(0, 0, 0)
-    end
-  end)
-```
+# Support
 
-## If you want to run something when the system boots
+See [https://nodemcu.readthedocs.org/en/dev/en/support/](https://nodemcu.readthedocs.org/en/dev/en/support/).
 
-```lua
-  --init.lua will be executed
-  file.open("init.lua", "w")
-  file.writeline([[print("Hello, do this at the beginning.")]])
-  file.close()
-  node.restart()  -- this will restart the module.
-```
+# License
 
-## Add a simple telnet server to the Lua interpreter
+[MIT](https://github.com/nodemcu/nodemcu-firmware/blob/master/LICENSE) © [zeroday](https://github.com/NodeMCU)/[nodemcu.com](http://nodemcu.com/index_en.html)
 
-```lua
-    -- a simple telnet server
-    s=net.createServer(net.TCP, 180)
-    s:listen(2323, function(c)
-       function s_output(str)
-          if(c~=nil)
-             then c:send(str)
-          end
-       end
-       node.output(s_output, 0)   -- re-direct output to function s_ouput.
-       c:on("receive", function(c, l)
-          node.input(l)           -- works like pcall(loadstring(l)) but support multiples separate lines
-       end)
-       c:on("disconnection", function(c)
-          node.output(nil)        -- un-register the redirect output function, output goes to serial
-       end)
-       print("Welcome to NodeMCU world.")
-    end)
-```
+# Build Options
 
-# Building the firmware
+The following sections explain some of the options you have if you want to [build your own NodeMCU firmware](http://nodemcu.readthedocs.org/en/dev/en/build/).
 
-There are several options for building the NodeMCU firmware.
+### Select Modules
 
-## Online firmware custom build
+Disable modules you won't be using to reduce firmware size and free up some RAM. The ESP8266 is quite limited in available RAM and running out of memory can cause a system panic.
 
-Please try Marcel's [NodeMCU custom build](http://nodemcu-build.com) cloud service and you can choose only the modules you need, and download the firmware once built.
-
-NodeMCU custom builds can build from all active branches (with the latest fixes).
-
-## Docker containerised build
-
-See [https://hub.docker.com/r/marcelstoer/nodemcu-build/](https://hub.docker.com/r/marcelstoer/nodemcu-build/)
-
-This Docker image includes the build toolchain and SDK. You just run the Docker image with your checked-out NodeMCU firmware repository (this one).
-
-You will need to see BUILD OPTIONS below, to configure the firmware before building.
-
-## Build it yourself
-
-See BUILD OPTIONS below, to configure the firmware before building.
-
-### Minimum requirements:
-
-  - unrar
-  - GNU autoconf, automake, libtool
-  - GNU gcc, g++, make
-  - GNU flex, bison, gawk, sed
-  - python, python-serial, libexpat-dev
-  - srecord
-  - The esp-open-sdk from https://github.com/pfalcon/esp-open-sdk
-
-### Build instructions:
-
-Assuming NodeMCU firmware is checked-out to `/opt/nodemcu-firmware`:
-
-```sh
-git clone --recursive https://github.com/pfalcon/esp-open-sdk.git /opt/esp-open-sdk
-cd /opt/esp-open-sdk
-make STANDALONE=y
-PATH=/opt/esp-open-sdk/xtensa-lx106-elf/bin:$PATH
-cd /opt/nodemcu-firmware
-make
-```
-
-# BUILD OPTIONS
-
-Disable modules you won't be using, to reduce firmware size on flash and
-free more RAM. The ESP8266 is quite limited in available RAM, and running
-out can cause a system panic.
-
-## Edit `app/include/user_modules.h`
-
-Comment-out the #define statement for unused modules. Example:
+Edit `app/include/user_modules.h` and comment-out the `#define` statement for modules you don't need. Example:
 
 ```c
-#ifdef LUA_USE_MODULES
-#define LUA_USE_MODULES_NODE
-#define LUA_USE_MODULES_FILE
-#define LUA_USE_MODULES_GPIO
-#define LUA_USE_MODULES_WIFI
-#define LUA_USE_MODULES_NET
-#define LUA_USE_MODULES_PWM
-#define LUA_USE_MODULES_I2C
-#define LUA_USE_MODULES_SPI
-#define LUA_USE_MODULES_TMR
-#define LUA_USE_MODULES_ADC
-#define LUA_USE_MODULES_UART
-#define LUA_USE_MODULES_OW
-#define LUA_USE_MODULES_BIT
+...
 #define LUA_USE_MODULES_MQTT
 // #define LUA_USE_MODULES_COAP
 // #define LUA_USE_MODULES_U8G
-// #define LUA_USE_MODULES_WS2801
-// #define LUA_USE_MODULES_WS2812
-// #define LUA_USE_MODULES_CJSON
-#define LUA_USE_MODULES_CRYPTO
-#define LUA_USE_MODULES_RC
-#define LUA_USE_MODULES_DHT
-#define LUA_USE_MODULES_RTCMEM
-#define LUA_USE_MODULES_RTCTIME
-#define LUA_USE_MODULES_RTCFIFO
-#define LUA_USE_MODULES_SNTP
-// #define LUA_USE_MODULES_BMP085
-#define LUA_USE_MODULES_TSL2561
-// #define LUA_USE_MODULES_HX711
-
-#endif /* LUA_USE_MODULES */
+...
 ```
 
-## Tagging your build
+### Tag Your Build
 
 Identify your firmware builds by editing `app/include/user_version.h`
 
 ```c
-#define NODE_VERSION    "NodeMCU 1.4.0+myname"
+#define NODE_VERSION    "NodeMCU 1.5.1+myname"
 #ifndef BUILD_DATE
-#define BUILD_DATE        "YYYYMMDD"
+#define BUILD_DATE      "YYYYMMDD"
 #endif
 ```
 
-## Setting the boot time serial interface rate
+### Set UART Bit Rate
 
-The initial baud rate at boot time is 9600 bps, but you can change this by
-editing `app/include/user_config.h` and change BIT_RATE_DEFAULT, e.g.:
+The initial baud rate at boot time is 9600bps. You can change this by
+editing `BIT_RATE_DEFAULT`  in `app/include/user_config.h`:
 
 ```c
 #define BIT_RATE_DEFAULT BIT_RATE_115200
 ```
 
-## Debugging
+### Debugging
 
-To enable runtime debug messages to serial console, edit `app/include/user_config.h`
+To enable runtime debug messages to serial console edit `app/include/user_config.h`
 
 ```c
 #define DEVELOP_VERSION
@@ -666,7 +448,6 @@ elseif( status == dht.ERROR_TIMEOUT ) then
 end
 
 ```
-=======
 ### Well hello there!
 
 This repository is meant to provide an example for *forking* a repository on GitHub.
@@ -676,4 +457,3 @@ Creating a *fork* is producing a personal copy of someone else's project. Forks 
 After forking this repository, you can make some changes to the project, and submit [a Pull Request](https://github.com/octocat/Spoon-Knife/pulls) as practice.
 
 For some more information on how to fork a repository, [check out our guide, "Forking Projects""](http://guides.github.com/overviews/forking/). Thanks! :sparkling_heart:
->>>>>>> upstream/master

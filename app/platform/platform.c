@@ -1,12 +1,16 @@
 // Platform-dependent functions
 
 #include "platform.h"
+#include "common.h"
 #include "c_stdio.h"
 #include "c_string.h"
 #include "c_stdlib.h"
 #include "gpio.h"
 #include "user_interface.h"
 #include "driver/uart.h"
+#include "driver/gpio16.h"
+#include "driver/i2c_master.h"
+#include "driver/spi.h"
 // Platform specific includes
 
 static void pwms_init();
@@ -131,7 +135,8 @@ int platform_gpio_read( unsigned pin )
 }
 
 #ifdef GPIO_INTERRUPT_ENABLE
-static void platform_gpio_intr_dispatcher( platform_gpio_intr_handler_fn_t cb){
+static void platform_gpio_intr_dispatcher( void *arg) {
+  platform_gpio_intr_handler_fn_t cb = arg;
   uint8 i, level;
   uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
   for (i = 0; i < GPIO_PIN_NUM; i++) {
